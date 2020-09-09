@@ -15,6 +15,8 @@ variables:
     value: "$(terraform_path)/envs/test"
   - name: prod_path
     value: "$(terraform_path)/envs/prod"
+  - name: terraform_version
+    value: 0.13.2 
 
 stages:
   - stage: Build
@@ -25,9 +27,9 @@ stages:
         continueOnError: false
         steps:
           - task: TerraformInstaller@0
-            displayName: "Install Terraform 0.13.0"
+            displayName: "Install Terraform"
             inputs:
-              terraformVersion: 0.13.0
+              terraformVersion: $(terraform_version) 
           - task: TerraformTaskV1@0
             displayName: "Terraform Init Test"
             inputs:
@@ -93,9 +95,9 @@ stages:
                     targetType: 'inline'
                     script: 'ls'
                 - task: TerraformInstaller@0
-                  displayName: "Install Terraform 0.13.0"
+                  displayName: "Install Terraform"
                   inputs:
-                    terraformVersion: 0.13.0
+                    terraformVersion: $(terraform_version) 
                 - task: TerraformTaskV1@0
                   displayName: "Terraform Apply"
                   inputs:
@@ -117,9 +119,9 @@ stages:
                 - download: current
                   artifact: terraform
                 - task: TerraformInstaller@0
-                  displayName: "Install Terraform 0.13.0"
+                  displayName: "Install Terraform"
                   inputs:
-                    terraformVersion: 0.13.0
+                    terraformVersion: $(terraform_version) 
                 - task: TerraformTaskV1@0
                   displayName: "Terraform Apply"
                   inputs:
