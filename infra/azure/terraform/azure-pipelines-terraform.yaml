@@ -17,6 +17,10 @@ variables:
     value: "$(terraform_path)/envs/prod"
   - name: terraform_version
     value: 0.13.2 
+  - name: test_plan
+    value: test.tfplan 
+  - name: prod_plan
+    value: prod.tfplan 
 
 stages:
   - stage: Build
@@ -44,7 +48,7 @@ stages:
             inputs:
               workingDirectory: "$(test_path)"
               command: plan
-              commandOptions: "-out test.tfplan -var=azure_subscription_id=$(azure-subscription-id) -var=postgres_admin_login=$(test-admin-login) -var=postgres_admin_password=$(test-admin-password)"
+              commandOptions: "-out $(test_plan) -var=azure_subscription_id=$(azure-subscription-id) -var=postgres_admin_login=$(test-admin-login) -var=postgres_admin_password=$(test-admin-password)"
               environmentServiceNameAzureRM: "CICDInfra - Terraform"
           - task: TerraformTaskV1@0
             displayName: "Terraform Init Prod"
@@ -60,7 +64,7 @@ stages:
             inputs:
               workingDirectory: "$(prod_path)"
               command: plan
-              commandOptions: "-out test.tfplan -var=azure_subscription_id=$(azure-subscription-id) -var=postgres_admin_login=$(prod-admin-login) -var=postgres_admin_password=$(prod-admin-password)"
+              commandOptions: "-out $(prod_plan) -var=azure_subscription_id=$(azure-subscription-id) -var=postgres_admin_login=$(prod-admin-login) -var=postgres_admin_password=$(prod-admin-password)"
               environmentServiceNameAzureRM: "CICDInfra - Terraform"
           - task: CopyFiles@2
             displayName: "Copy Terraform Plans"
@@ -88,12 +92,7 @@ stages:
             deploy:
               steps:
                 - download: current
-                  artifact: terraform
-                - task: PowerShell@2
-                  inputs:
-                    workingDirectory: '$(Pipeline.Workspace)/terraform/envs/test'
-                    targetType: 'inline'
-                    script: 'ls'
+                  artifact: terraform                
                 - task: TerraformInstaller@0
                   displayName: "Install Terraform"
                   inputs:
@@ -103,7 +102,7 @@ stages:
                   inputs:
                     workingDirectory: "$(Pipeline.Workspace)/terraform/envs/test"
                     command: apply
-                    commandOptions: "-auto-approve 'test.ftplan'"
+                    commandOptions: "-auto-approve $(test_plan)"
                     environmentServiceNameAzureRM: "CICDInfra - Terraform"
   - stage: Prod
     jobs:
@@ -127,5 +126,5 @@ stages:
                   inputs:
                     workingDirectory: "$(Pipeline.Workspace)/terraform/envs/prod"
                     command: apply
-                    commandOptions: "-auto-approve 'prod.ftplan'"
+                    commandOptions: "-auto-approve $(prod_plan)"
                     environmentServiceNameAzureRM: "CICDInfra - Terraform"
