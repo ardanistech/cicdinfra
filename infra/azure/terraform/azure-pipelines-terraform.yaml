@@ -1,0 +1,124 @@
+name: "CICD Infra"
+
+trigger:
+  branches:
+    include:
+      - master
+  paths:
+    include:
+      - infra/azure/terraform
+
+variables:
+  - name: terraform_path
+    value: "$(System.DefaultWorkingDirectory)/infra/azure/terraform"
+  - name: test_path
+    value: "$(terraform_path)/envs/test"
+  - name: prod_path
+    value: "$(terraform_path)/envs/prod"
+
+stages:
+  - stage: Build
+    jobs:
+      - job: Build
+        pool:
+          vmImage: "windows-latest"
+        continueOnError: false
+        steps:
+          - task: TerraformInstaller@0
+            displayName: "Install Terraform 0.13.0"
+            inputs:
+              terraformVersion: 0.13.0
+          - task: TerraformTaskV1@0
+            displayName: "Terraform Init Test"
+            inputs:
+              workingDirectory: "$(test_path)"
+              backendServiceArm: "CICDInfra - Terraform"
+              backendAzureRmResourceGroupName: cicdinfra
+              backendAzureRmStorageAccountName: cicdinfra
+              backendAzureRmContainerName: "terraform-test"
+              backendAzureRmKey: "$(backend-access-key)"
+          - task: TerraformTaskV1@0
+            displayName: "Terraform Plan Test"
+            inputs:
+              workingDirectory: "$(test_path)"
+              command: plan
+              commandOptions: "-out test.tfplan -var=azure_subscription_id=$(azure-subscription-id) -var=postgres_admin_login=$(test-admin-login) -var=postgres_admin_password=$(test-admin-password)"
+              environmentServiceNameAzureRM: "CICDInfra - Terraform"
+          - task: TerraformTaskV1@0
+            displayName: "Terraform Init Prod"
+            inputs:
+              workingDirectory: "$(prod_path)"
+              backendServiceArm: "CICDInfra - Terraform"
+              backendAzureRmResourceGroupName: cicdinfra
+              backendAzureRmStorageAccountName: cicdinfra
+              backendAzureRmContainerName: "terraform-prod"
+              backendAzureRmKey: "$(backend-access-key)"
+          - task: TerraformTaskV1@0
+            displayName: "Terraform Plan Prod"
+            inputs:
+              workingDirectory: "$(prod_path)"
+              command: plan
+              commandOptions: "-out test.tfplan -var=azure_subscription_id=$(azure-subscription-id) -var=postgres_admin_login=$(prod-admin-login) -var=postgres_admin_password=$(prod-admin-password)"
+              environmentServiceNameAzureRM: "CICDInfra - Terraform"
+          - task: CopyFiles@2
+            displayName: "Copy Terraform Plans"
+            inputs:
+              sourceFolder: "$(terraform_path)"
+              contents: "**"
+              targetFolder: "$(Build.ArtifactStagingDirectory)"
+              cleanTargetFolder: true
+          - task: PublishBuildArtifacts@1
+            displayName: "Publish Plans"
+            condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+            inputs:
+              PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+              ArtifactName: "terraform"
+              publishLocation: "Container"
+  - stage: Test
+    jobs:
+      - deployment: ApplyTestPlan
+        displayName: Apply Test Plan
+        pool:
+          vmImage: "windows-latest"
+        environment: "test"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: terraform
+                - task: TerraformInstaller@0
+                  displayName: "Install Terraform 0.13.0"
+                  inputs:
+                    terraformVersion: 0.13.0
+                - task: TerraformTaskV1@0
+                  displayName: "Terraform Apply"
+                  inputs:
+                    workingDirectory: "$(Pipeline.Workspace)/terraform/envs/test"
+                    command: apply
+                    commandOptions: "-auto-approve test.ftplan"
+                    environmentServiceNameAzureRM: "CICDInfra - Terraform"
+  - stage: Prod
+    jobs:
+      - deployment: ApplyProdPlan
+        displayName: Apply Prod Plan
+        pool:
+          vmImage: "windows-latest"
+        environment: "prod"
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - download: current
+                  artifact: terraform
+                - task: TerraformInstaller@0
+                  displayName: "Install Terraform 0.13.0"
+                  inputs:
+                    terraformVersion: 0.13.0
+                - task: TerraformTaskV1@0
+                  displayName: "Terraform Apply"
+                  inputs:
+                    workingDirectory: "$(Pipeline.Workspace)/terraform/envs/prod"
+                    command: apply
+                    commandOptions: "-auto-approve prod.ftplan"
+                    environmentServiceNameAzureRM: "CICDInfra - Terraform"

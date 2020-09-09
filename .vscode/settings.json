@@ -1,0 +1,13 @@
+{
+    "editor.detectIndentation": true,
+    "terraform.languageServer": {
+
+        "external": true,
+        "pathToBinary": "",
+        "args": [
+            "serve"
+        ],
+        "maxNumberOfProblems": 100,
+        "trace.server": "off"
+    }
+}
