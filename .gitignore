@@ -332,3 +332,4 @@ ASALocalRun/
 
 # Terraform
 .terraform/
+*.tfplan

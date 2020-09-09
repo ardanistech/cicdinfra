@@ -1,7 +1,3 @@
-terraform {
-  required_version = ">= 0.12"
-}
-
 locals {
   os                = "Linux"
   framework_version = "DOTNETCORE|3.1"

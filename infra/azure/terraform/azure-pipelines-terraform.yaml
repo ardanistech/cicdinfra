@@ -101,7 +101,7 @@ stages:
                   inputs:
                     workingDirectory: "$(Pipeline.Workspace)/terraform/envs/test"
                     command: apply
-                    commandOptions: "-auto-approve test.ftplan"
+                    commandOptions: "-auto-approve 'test.ftplan'"
                     environmentServiceNameAzureRM: "CICDInfra - Terraform"
   - stage: Prod
     jobs:
@@ -125,5 +125,5 @@ stages:
                   inputs:
                     workingDirectory: "$(Pipeline.Workspace)/terraform/envs/prod"
                     command: apply
-                    commandOptions: "-auto-approve prod.ftplan"
+                    commandOptions: "-auto-approve 'prod.ftplan'"
                     environmentServiceNameAzureRM: "CICDInfra - Terraform"
