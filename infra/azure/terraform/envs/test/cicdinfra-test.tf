@@ -24,7 +24,7 @@ module test_webapp {
   app_service_plan = {
     name = "cicdinfra-test-asp"
     tier = "Basic"
-    size = "F1"
+    size = "B1"
   }
 
   app_service_vnet = {
