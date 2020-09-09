@@ -87,6 +87,10 @@ stages:
               steps:
                 - download: current
                   artifact: terraform
+                - task: PowerShell@2
+                  inputs:
+                    targetType: 'inline'
+                    script: 'ls'
                 - task: TerraformInstaller@0
                   displayName: "Install Terraform 0.13.0"
                   inputs:
