@@ -41,8 +41,8 @@ stages:
               backendServiceArm: "CICDInfra - Terraform"
               backendAzureRmResourceGroupName: cicdinfra
               backendAzureRmStorageAccountName: cicdinfra
-              backendAzureRmContainerName: "terraform-test"
-              backendAzureRmKey: "$(backend-access-key)"
+              backendAzureRmContainerName: terraform-test
+              backendAzureRmKey: terraform.tfstate
           - task: TerraformTaskV1@0
             displayName: "Terraform Plan Test"
             inputs:
@@ -57,8 +57,8 @@ stages:
               backendServiceArm: "CICDInfra - Terraform"
               backendAzureRmResourceGroupName: cicdinfra
               backendAzureRmStorageAccountName: cicdinfra
-              backendAzureRmContainerName: "terraform-prod"
-              backendAzureRmKey: "$(backend-access-key)"
+              backendAzureRmContainerName: terraform-prod
+              backendAzureRmKey: terraform.tfstate
           - task: TerraformTaskV1@0
             displayName: "Terraform Plan Prod"
             inputs:
